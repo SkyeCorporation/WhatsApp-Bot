@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Esdeath WhatsApp Bot"
+description = "Dashboard WhatsApp bot Esdeath berbasis Baileys untuk memindai QR login, memantau status dan uptime, serta mengelola command dan data pengguna SQLite."
+version = "1.0.0"
+id = "artifacts/esdeath-bot"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23471
+
+[services.development]
+run = "pnpm --filter @workspace/esdeath-bot run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/esdeath-bot", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/esdeath-bot/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23471"
+BASE_PATH = "/"

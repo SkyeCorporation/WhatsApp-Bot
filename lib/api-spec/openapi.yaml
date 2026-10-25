@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: esdeath
+    description: Esdeath WhatsApp bot dashboard
 paths:
   /healthz:
     get:
@@ -24,6 +26,126 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /esdeath/auth/session:
+    get:
+      operationId: getEsdeathSession
+      tags: [esdeath]
+      summary: Check dashboard login
+      responses:
+        "200":
+          description: Current dashboard login state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
+  /esdeath/auth/login:
+    post:
+      operationId: loginEsdeath
+      tags: [esdeath]
+      summary: Log in to the dashboard
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
+        "401":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /esdeath/auth/logout:
+    post:
+      operationId: logoutEsdeath
+      tags: [esdeath]
+      summary: Log out of the dashboard
+      responses:
+        "200":
+          description: Dashboard session ended
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionStatus"
+  /esdeath/dashboard:
+    get:
+      operationId: getEsdeathDashboard
+      tags: [esdeath]
+      summary: Get bot status, QR, uptime, and user counts
+      responses:
+        "200":
+          description: Dashboard overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EsdeathDashboard"
+        "401":
+          description: Dashboard login required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /esdeath/bot/connect:
+    post:
+      operationId: connectEsdeathBot
+      tags: [esdeath]
+      summary: Start or reconnect the WhatsApp bot
+      responses:
+        "200":
+          description: Bot connection state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EsdeathDashboard"
+        "401":
+          description: Dashboard login required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /esdeath/users:
+    get:
+      operationId: listEsdeathUsers
+      tags: [esdeath]
+      summary: List known WhatsApp users
+      responses:
+        "200":
+          description: Known users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EsdeathUsers"
+        "401":
+          description: Dashboard login required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /esdeath/commands:
+    get:
+      operationId: listEsdeathCommands
+      tags: [esdeath]
+      summary: List commands and role requirements
+      responses:
+        "200":
+          description: Available bot commands
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EsdeathCommands"
+        "401":
+          description: Dashboard login required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +155,104 @@ components:
           type: string
       required:
         - status
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    LoginInput:
+      type: object
+      properties:
+        password:
+          type: string
+          minLength: 1
+      required: [password]
+    SessionStatus:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+      required: [authenticated]
+    EsdeathDashboard:
+      type: object
+      properties:
+        botName:
+          type: string
+        adminName:
+          type: string
+        status:
+          type: string
+          enum: [connecting, qr, connected, disconnected, error]
+        phoneNumber:
+          type: ["string", "null"]
+        uptimeSeconds:
+          type: integer
+          minimum: 0
+        qrCodeDataUrl:
+          type: ["string", "null"]
+        totalUsers:
+          type: integer
+          minimum: 0
+        bannedUsers:
+          type: integer
+          minimum: 0
+        totalCommands:
+          type: integer
+          minimum: 0
+        lastError:
+          type: ["string", "null"]
+      required:
+        - botName
+        - adminName
+        - status
+        - phoneNumber
+        - uptimeSeconds
+        - qrCodeDataUrl
+        - totalUsers
+        - bannedUsers
+        - totalCommands
+        - lastError
+    EsdeathUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        nomor:
+          type: string
+        status:
+          type: string
+          enum: [banned, unbanned]
+        bannedReason:
+          type: string
+        money:
+          type: integer
+      required: [id, name, nomor, status, bannedReason, money]
+    EsdeathUsers:
+      type: array
+      items:
+        $ref: "#/components/schemas/EsdeathUser"
+    EsdeathCommand:
+      type: object
+      properties:
+        name:
+          type: string
+        cooldown:
+          type: integer
+          minimum: 0
+        description:
+          type: string
+        role:
+          type: integer
+          minimum: 0
+          maximum: 4
+        usage:
+          type: string
+      required: [name, cooldown, description, role, usage]
+    EsdeathCommands:
+      type: array
+      items:
+        $ref: "#/components/schemas/EsdeathCommand"
 

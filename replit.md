@@ -1,44 +1,56 @@
-# [Project name]
+# Esdeath WhatsApp Bot
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Esdeath is a Baileys-powered WhatsApp bot with a password-gated web dashboard and a local SQLite user database.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API and WhatsApp bot service
+- `pnpm --filter @workspace/esdeath-bot run dev` — run the dashboard
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Bot settings: `artifacts/api-server/config.json` (`prefix`, `adminNum`, `moderatorNum`)
+- SQLite database and Baileys session: `artifacts/api-server/data/` (ignored by Git and deployment)
+- Node.js 22 is required for the bot service.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
+- pnpm workspaces, Node.js 22, TypeScript 5.9
+- Dashboard: React + Vite
+- API: Express 5 + Baileys
+- Bot data: SQLite + better-sqlite3
+- API validation: Zod schemas generated from OpenAPI
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Build: esbuild (ESM bundle)
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/esdeath-bot/` — login screen and operations dashboard
+- `artifacts/api-server/src/lib/baileys-manager.ts` — WhatsApp connection, QR, and uptime state
+- `artifacts/api-server/src/lib/database.ts` — SQLite schema and user records
+- `artifacts/api-server/cmds/` — `ping`, `help`, `admin`, and `c` commands
+- `artifacts/api-server/config.json` — command prefix and bot admin/moderator phone numbers
+- `lib/api-spec/openapi.yaml` — source of truth for dashboard API contracts
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- One SQLite file stores one row per normalized WhatsApp phone number.
+- Baileys session files stay in the ignored local data directory and are not committed.
+- QR access and dashboard data require a server-issued, HTTP-only session cookie.
+- The dashboard password is the fixed value requested for this prototype; change the auth approach before making the dashboard public.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+The dashboard displays the login QR, connection state, phone number, uptime, user records, and command metadata. Bot roles are: all users (0), group admin (1), group admin level 2 (2), bot moderator (3), and bot admin (4). Bot moderators and admins skip cooldowns.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Keep WhatsApp chat content out of server logs; any chat notification should identify only the bot's phone number, never a LID.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Add phone numbers as digits with country code in `config.json`; blank entries are ignored.
+- Do not commit `artifacts/api-server/data/`; it contains the SQLite database and linked WhatsApp session.
 
 ## Pointers
 

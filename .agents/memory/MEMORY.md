@@ -1,0 +1,1 @@
+- [Node 22 runtime checks](node22-runtime-checks.md) — pnpm engine warnings may disagree with the Node version used by the running app; verify the actual process.

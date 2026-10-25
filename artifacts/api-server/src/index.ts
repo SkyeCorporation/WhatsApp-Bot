@@ -1,5 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { baileysManager } from "./lib/baileys-manager";
+import { userDatabase } from "./lib/database";
 
 const rawPort = process.env["PORT"];
 
@@ -15,11 +17,18 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-app.listen(port, (err) => {
-  if (err) {
-    logger.error({ err }, "Error listening on port");
-    process.exit(1);
-  }
-
+const server = app.listen(port, () => {
   logger.info({ port }, "Server listening");
+  void baileysManager.start();
 });
+
+async function shutdown(signal: string): Promise<void> {
+  logger.info({ signal }, "Shutting down Esdeath services");
+  await baileysManager.stop();
+  userDatabase.close();
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+
+process.once("SIGINT", () => void shutdown("SIGINT"));
+process.once("SIGTERM", () => void shutdown("SIGTERM"));
